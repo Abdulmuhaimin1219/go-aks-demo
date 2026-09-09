@@ -14,14 +14,14 @@ permissions:
 
 env:
   REGISTRY: abdulacr.azurecr.io
-  IMAGE_NAME: go-aks-demo
+  IMAGE_NAME: ${{ github.event.repository.name }}
   AKS_RESOURCE_GROUP: abdul-rg
   AKS_CLUSTER_NAME: abdul-aks
 
 jobs:
   deploy-dev:
     name: Deploy to DEV
-    runs-on: [self-hosted]
+    runs-on: self-hosted
 
     environment:
       name: dev
@@ -48,21 +48,22 @@ jobs:
         run: |
           kubectl get nodes
 
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
       - name: Deploy to DEV
         run: |
+          kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+
           cd k8s/overlays/dev
 
-          kustomize edit set image \
-            abdulacr.azurecr.io/go-aks-demo=$REGISTRY/$IMAGE_NAME:${{ inputs.image_tag }}
+          kustomize edit set image abdulacr.azurecr.io/go-aks-demo=$REGISTRY/$IMAGE_NAME:${{ inputs.image_tag }}
 
           kubectl apply -k .
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status \
-            deployment/go-aks-demo \
-            -n dev \
-            --timeout=180s
+          kubectl rollout status deployment/go-aks-demo -n dev --timeout=180s
 
       - name: Verify deployment
         run: |
