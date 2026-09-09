@@ -1,0 +1,71 @@
+name: CD - DEV
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker image SHA to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGISTRY: abdulacr.azurecr.io
+  IMAGE_NAME: go-aks-demo
+  AKS_RESOURCE_GROUP: abdul-rg
+  AKS_CLUSTER_NAME: abdul-aks
+
+jobs:
+  deploy-dev:
+    name: Deploy to DEV
+    runs-on: [self-hosted, private-aks]
+
+    environment:
+      name: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group "$AKS_RESOURCE_GROUP" \
+            --name "$AKS_CLUSTER_NAME" \
+            --overwrite-existing
+
+      - name: Verify AKS access
+        run: |
+          kubectl get nodes
+
+      - name: Deploy to DEV
+        run: |
+          cd k8s/overlays/dev
+
+          kustomize edit set image \
+            abdulacr.azurecr.io/go-aks-demo=$REGISTRY/$IMAGE_NAME:${{ inputs.image_tag }}
+
+          kubectl apply -k .
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status \
+            deployment/go-aks-demo \
+            -n dev \
+            --timeout=180s
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n dev
+          kubectl get deployment go-aks-demo -n dev
+          kubectl get service go-aks-demo -n dev
