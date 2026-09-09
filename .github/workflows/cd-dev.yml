@@ -1,4 +1,4 @@
-```yaml
+
 name: CD - DEV
 
 on:
@@ -22,7 +22,7 @@ env:
 jobs:
   deploy-dev:
     name: Deploy to DEV
-    runs-on: [self-hosted]
+    runs-on: self-hosted
 
     environment:
       name: dev
@@ -58,21 +58,16 @@ jobs:
 
           cd k8s/overlays/dev
 
-          kustomize edit set image \
-            abdulacr.azurecr.io/go-aks-demo=$REGISTRY/$IMAGE_NAME:${{ inputs.image_tag }}
+          kustomize edit set image abdulacr.azurecr.io/go-aks-demo=$REGISTRY/$IMAGE_NAME:${{ inputs.image_tag }}
 
           kubectl apply -k .
 
       - name: Wait for rollout
         run: |
-          kubectl rollout status \
-            deployment/go-aks-demo \
-            -n dev \
-            --timeout=180s
+          kubectl rollout status deployment/go-aks-demo -n dev --timeout=180s
 
       - name: Verify deployment
         run: |
           kubectl get pods -n dev
           kubectl get deployment go-aks-demo -n dev
           kubectl get service go-aks-demo -n dev
-```
