@@ -1,3 +1,4 @@
+```yaml
 name: CD - DEV
 
 on:
@@ -53,6 +54,8 @@ jobs:
 
       - name: Deploy to DEV
         run: |
+          kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+
           cd k8s/overlays/dev
 
           kustomize edit set image \
@@ -72,3 +75,4 @@ jobs:
           kubectl get pods -n dev
           kubectl get deployment go-aks-demo -n dev
           kubectl get service go-aks-demo -n dev
+```
