@@ -15,7 +15,7 @@ permissions:
 
 env:
   REGISTRY: abdulacr.azurecr.io
-  IMAGE_NAME: go-aks-demo
+  IMAGE_NAME: ${{ github.event.repository.name }}
   AKS_RESOURCE_GROUP: abdul-rg
   AKS_CLUSTER_NAME: abdul-aks
 
