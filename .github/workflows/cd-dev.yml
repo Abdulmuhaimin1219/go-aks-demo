@@ -21,7 +21,7 @@ env:
 jobs:
   deploy-dev:
     name: Deploy to DEV
-    runs-on: [self-hosted, private-aks]
+    runs-on: [self-hosted]
 
     environment:
       name: dev
