@@ -60,9 +60,9 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            -t $REGISTRY/$IMAGE_NAME:${{ github.run_number }} \
             .
 
       - name: Push Docker image
         run: |
-          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_NAME:${{ github.run_number }}
