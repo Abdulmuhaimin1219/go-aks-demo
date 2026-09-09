@@ -1,0 +1,71 @@
+name: CD - STAGING
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker image tag to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGISTRY: abdulacr.azurecr.io
+  IMAGE_NAME: ${{ github.event.repository.name }}
+  AKS_RESOURCE_GROUP: abdul-rg
+  AKS_CLUSTER_NAME: abdul-aks
+
+jobs:
+  deploy-staging:
+    name: Deploy to STAGING
+    runs-on: self-hosted
+
+    environment:
+      name: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group "$AKS_RESOURCE_GROUP" \
+            --name "$AKS_CLUSTER_NAME" \
+            --overwrite-existing
+
+      - name: Verify AKS access
+        run: |
+          kubectl get nodes
+
+      - name: Deploy to STAGING with Helm
+        run: |
+          helm upgrade --install go-aks-demo ./helm/go-aks-demo \
+            --namespace staging \
+            --create-namespace \
+            -f ./helm/go-aks-demo/values-staging.yaml \
+            --set image.repository=$REGISTRY/$IMAGE_NAME \
+            --set image.tag=${{ inputs.image_tag }}
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/go-aks-demo \
+            -n staging \
+            --timeout=180s
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n staging
+          kubectl get deployment go-aks-demo -n staging
+          kubectl get service go-aks-demo -n staging
+          helm status go-aks-demo -n staging

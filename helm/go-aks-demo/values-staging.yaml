@@ -5,4 +5,4 @@ environment: staging
 image:
   repository: abdulacr.azurecr.io/go-aks-demo
   tag: "latest"
-  pullPolicy: IfNotPresent
+  pullPolicy: IfNotPresentgit 
