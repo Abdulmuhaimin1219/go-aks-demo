@@ -6,6 +6,10 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build-and-push:
     uses: Abdulmuhaimin1219/my-devops-playbook/.github/workflows/reusable-build-push-acr.yml@main
